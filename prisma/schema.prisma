@@ -20,6 +20,7 @@ model User {
   imageUrl      String?
   timezone      String         @default("UTC")
   locale        String         @default("en")
+  availability  Json?          // General working hours/availability schedule
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   eventTypes    EventType[]
@@ -77,4 +78,16 @@ model HostAnalytics {
   updatedAt     DateTime @updatedAt
 
   @@map("host_analytics")
+}
+
+model GoogleAccount {
+  id           String   @id @default(cuid())
+  clerkUserId  String   @unique
+  accessToken  String
+  refreshToken String
+  expiryDate   BigInt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("google_accounts")
 }

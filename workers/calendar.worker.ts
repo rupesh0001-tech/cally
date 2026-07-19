@@ -31,8 +31,21 @@ export const calendarWorker = new Worker(
 
     const hostUserId = booking.eventType.userId;
     let googleAccessToken: string | null = null;
+    let googleRefreshToken: string | null = null;
+    let googleExpiryDate: number | null = null;
 
-    if (env.CLERK_SECRET_KEY && env.CLERK_SECRET_KEY !== "sk_test_8uyJmngsDos4vNOQgphyBVqsGBcJ3M0NttqijwBCDx") {
+    // 1. Check local DB for Google Account credentials
+    const googleAccount = await prisma.googleAccount.findUnique({
+      where: { clerkUserId: hostUserId },
+    });
+
+    if (googleAccount) {
+      googleAccessToken = googleAccount.accessToken;
+      googleRefreshToken = googleAccount.refreshToken;
+      googleExpiryDate = Number(googleAccount.expiryDate);
+      console.log(`[Calendar Worker] Using local DB credentials for host ${hostUserId}`);
+    } else if (env.CLERK_SECRET_KEY && env.CLERK_SECRET_KEY !== "sk_test_8uyJmngsDos4vNOQgphyBVqsGBcJ3M0NttqijwBCDx") {
+      // 2. Fall back to Clerk
       try {
         const tokenResponse = await clerkClient.users.getUserOauthAccessToken(
           hostUserId,
@@ -50,12 +63,37 @@ export const calendarWorker = new Worker(
       }
     }
 
+    // Configure oauth2 client
+    if (googleAccessToken) {
+      oauth2Client.setCredentials({
+        access_token: googleAccessToken,
+        refresh_token: googleRefreshToken || undefined,
+        expiry_date: googleExpiryDate || undefined,
+      });
+
+      // Handle token refreshes automatically and save back to DB
+      oauth2Client.on("tokens", async (tokens) => {
+        if (tokens.access_token) {
+          console.log(`[Calendar Worker] Auto-refreshed access token for user ${hostUserId}`);
+          try {
+            await prisma.googleAccount.update({
+              where: { clerkUserId: hostUserId },
+              data: {
+                accessToken: tokens.access_token,
+                expiryDate: BigInt(tokens.expiry_date || 0),
+                ...(tokens.refresh_token ? { refreshToken: tokens.refresh_token } : {}),
+              },
+            });
+          } catch (err) {
+            console.error("[Calendar Worker] Failed to save refreshed Google tokens to database:", err);
+          }
+        }
+      });
+    }
+
     if (action === "create-event") {
       if (googleAccessToken) {
         try {
-          oauth2Client.setCredentials({
-            access_token: googleAccessToken,
-          });
           const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
           const response = await calendar.events.insert({
@@ -98,9 +136,6 @@ export const calendarWorker = new Worker(
 
       if (googleAccessToken) {
         try {
-          oauth2Client.setCredentials({
-            access_token: googleAccessToken,
-          });
           const calendar = google.calendar({ version: "v3", auth: oauth2Client });
           await calendar.events.delete({
             calendarId: "primary",
