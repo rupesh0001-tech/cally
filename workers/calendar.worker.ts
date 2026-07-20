@@ -210,6 +210,29 @@ export const calendarWorker = new Worker(
         console.error(`[Calendar Worker] ❌ Calendar delete failed:`, err.message);
       }
     }
+    
+    // ── UPDATE event ─────────────────────────────────────────────────────────
+    else if (action === "update-event") {
+      const eventIdToUpdate = googleEventId || (booking.bookingFieldsData as any)?.googleEventId;
+      if (!eventIdToUpdate) {
+        console.log(`[Calendar Worker] No googleEventId for booking ${bookingId}, cannot update.`);
+        return;
+      }
+
+      try {
+        await calendar.events.patch({
+          calendarId: "primary",
+          eventId: eventIdToUpdate,
+          requestBody: {
+            start: { dateTime: booking.startTime.toISOString() },
+            end:   { dateTime: booking.endTime.toISOString() },
+          },
+        });
+        console.log(`[Calendar Worker] ✅ Event ${eventIdToUpdate} updated in Google Calendar.`);
+      } catch (err: any) {
+        console.error(`[Calendar Worker] ❌ Calendar update failed:`, err.message);
+      }
+    }
   },
   {
     connection: redisConnection,
