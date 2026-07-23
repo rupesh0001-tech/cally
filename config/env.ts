@@ -28,3 +28,6 @@ if (!env.REDIS_URL) {
 if (!env.CLERK_SECRET_KEY) {
   console.warn("⚠️ Warning: CLERK_SECRET_KEY is not set in environment variables");
 }
+if (!env.RAZORPAY_WEBHOOK_SECRET) {
+  console.warn("⚠️ Warning: RAZORPAY_WEBHOOK_SECRET is not set — payment webhook jobs will be rejected at runtime.");
+}

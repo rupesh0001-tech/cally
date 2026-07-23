@@ -12,28 +12,22 @@ export const paymentWorker = new Worker(
     const { rawBody, signature } = job.data;
     console.log("[Payment Worker] Processing Razorpay webhook payment job...");
 
-    const hasRazorpayCreds =
-      env.RAZORPAY_KEY_ID &&
-      env.RAZORPAY_KEY_ID !== "rzp_test_12345" &&
-      env.RAZORPAY_KEY_SECRET &&
-      env.RAZORPAY_KEY_SECRET !== "razorpay_secret_12345" &&
-      env.RAZORPAY_WEBHOOK_SECRET &&
-      env.RAZORPAY_WEBHOOK_SECRET !== "razorpay_webhook_secret_12345";
-
-    if (hasRazorpayCreds) {
-      const expectedSignature = crypto
-        .createHmac("sha256", env.RAZORPAY_WEBHOOK_SECRET)
-        .update(rawBody)
-        .digest("hex");
-
-      if (expectedSignature !== signature) {
-        console.error("[Payment Worker] Razorpay webhook signature verification failed.");
-        throw new Error("Invalid Razorpay webhook signature.");
-      }
-      console.log("[Payment Worker] Razorpay signature verified successfully.");
-    } else {
-      console.log("[Payment Worker] Razorpay credentials not configured, skipping signature verification.");
+    // Webhook signature verification is mandatory — no bypass allowed
+    if (!env.RAZORPAY_WEBHOOK_SECRET) {
+      console.error("[Payment Worker] RAZORPAY_WEBHOOK_SECRET is not configured. Rejecting webhook to prevent payment injection.");
+      throw new Error("Payment worker cannot process webhooks: RAZORPAY_WEBHOOK_SECRET is not set.");
     }
+
+    const expectedSignature = crypto
+      .createHmac("sha256", env.RAZORPAY_WEBHOOK_SECRET)
+      .update(rawBody)
+      .digest("hex");
+
+    if (expectedSignature !== signature) {
+      console.error("[Payment Worker] Razorpay webhook signature verification failed.");
+      throw new Error("Invalid Razorpay webhook signature.");
+    }
+    console.log("[Payment Worker] Razorpay signature verified successfully.");
 
     const payload = JSON.parse(rawBody);
     const event = payload.event;
