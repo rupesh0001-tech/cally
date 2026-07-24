@@ -7,6 +7,7 @@ import { Select } from "../../components/ui/Select";
 import clsx from "clsx";
 
 const API_BASE: string =
+  (import.meta as any).env?.VITE_API_URL ||
   (typeof window !== "undefined" && (window as any).process?.env?.VITE_API_URL) ||
   "http://localhost:5001/api";
 

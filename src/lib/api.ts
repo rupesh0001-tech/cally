@@ -8,6 +8,7 @@ export function useApi() {
     const token = await getToken();
     return axios.create({
       baseURL:
+        (import.meta as any).env?.VITE_API_URL ||
         (typeof window !== "undefined" && (window as any).process?.env?.VITE_API_URL) ||
         "http://localhost:5001/api",
       headers: {
