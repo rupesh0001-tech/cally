@@ -20,9 +20,10 @@ export function Navbar() {
           </div>
         </Link>
         
-        <nav className="flex items-center gap-9 font-semibold text-[15px] text-[#171614]">
-          <a href="#features" className="opacity-85 hover:opacity-100 transition-opacity">Features</a>
-          <a href="#how" className="opacity-85 hover:opacity-100 transition-opacity">How It Works</a>
+        <nav className="flex items-center gap-7 font-semibold text-[15px] text-[#171614]">
+          <Link to="/blogs" className="opacity-85 hover:opacity-100 transition-opacity">Blog</Link>
+          <a href="/#features" className="opacity-85 hover:opacity-100 transition-opacity">Features</a>
+          <a href="/#how" className="opacity-85 hover:opacity-100 transition-opacity">How It Works</a>
           
           {!isLoaded ? (
             <div className="w-20 h-8 opacity-0"></div>

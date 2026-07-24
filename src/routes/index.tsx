@@ -19,6 +19,8 @@ import OnboardingPage from "../pages/Onboarding";
 import EventEditPage from "../pages/Dashboard/EventEdit";
 import BookingPage from "../pages/Booking";
 import DemoPreviewPage from "../pages/Preview";
+import BlogsPage from "../pages/Blogs";
+import BlogPostDetailPage from "../pages/Blogs/BlogPostDetail";
 
 export function AppRoutes() {
   return (
@@ -26,6 +28,8 @@ export function AppRoutes() {
       {/* Public Pages */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/blogs" element={<BlogsPage />} />
+        <Route path="/blogs/:slug" element={<BlogPostDetailPage />} />
         <Route path="/features" element={<div className="py-20 text-center text-ink font-bold">Features (Coming Soon)</div>} />
         <Route path="/pricing" element={<div className="py-20 text-center text-ink font-bold">Pricing (Coming Soon)</div>} />
         <Route path="/integrations" element={<div className="py-20 text-center text-ink font-bold">Integrations (Coming Soon)</div>} />

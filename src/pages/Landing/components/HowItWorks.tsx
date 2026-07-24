@@ -38,7 +38,7 @@ export function HowItWorks() {
             <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-3.5 bg-[#141311] rounded-full z-10" />
             <img
               src={bookingPage}
-              className="w-full h-full object-cover object-top select-none"
+              className="w-full h-full object-cover object-top select-none rounded-[30px]"
               alt="Cally Booking Page"
             />
           </div>

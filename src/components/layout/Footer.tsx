@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { LogoMarkSvg } from "../ui/Logo";
 
 export function Footer() {
@@ -23,7 +24,7 @@ export function Footer() {
             <h4 className="text-[13px] uppercase tracking-wider opacity-55 mb-4 font-bold text-white/70">Product</h4>
             <ul className="list-none p-0 m-0">
               <li className="mb-2.5 text-sm opacity-85">
-                <a href="#features" className="hover:opacity-65 transition-all text-[#FDFBF2] no-underline">Features</a>
+                <a href="/#features" className="hover:opacity-65 transition-all text-[#FDFBF2] no-underline">Features</a>
               </li>
               <li className="mb-2.5 text-sm opacity-85">
                 <a href="#" className="hover:opacity-65 transition-all text-[#FDFBF2] no-underline">Integrations</a>
@@ -40,7 +41,7 @@ export function Footer() {
                 <a href="#" className="hover:opacity-65 transition-all text-[#FDFBF2] no-underline">About</a>
               </li>
               <li className="mb-2.5 text-sm opacity-85">
-                <a href="#" className="hover:opacity-65 transition-all text-[#FDFBF2] no-underline">Blog</a>
+                <Link to="/blogs" className="hover:opacity-65 transition-all text-[#FDFBF2] no-underline">Blog</Link>
               </li>
               <li className="mb-2.5 text-sm opacity-85">
                 <a href="#" className="hover:opacity-65 transition-all text-[#FDFBF2] no-underline">Careers</a>

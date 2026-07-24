@@ -18,11 +18,11 @@ export function HeroPhone() {
           <div className="w-[46px] h-[12px] bg-[#111010] rounded-full" />
         </div>
 
-        {/* Screenshot */}
-        <div className="overflow-hidden">
+        {/* Screenshot with curved corners */}
+        <div className="overflow-hidden rounded-b-[28px]">
           <img
             src={phoneDashboard}
-            className="w-full h-auto block select-none"
+            className="w-full h-auto block select-none rounded-b-[28px]"
             alt="Cally Mobile"
             draggable={false}
           />
