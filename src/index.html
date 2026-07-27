@@ -16,16 +16,25 @@
     <meta property="og:image" content="https://cally.com/dashboard-pc.png" />
     <meta property="og:type" content="website" />
     
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="./index.css" />
+
     <!-- Google Search Console Verification Meta Tag Placeholder -->
     <!-- <meta name="google-site-verification" content="YOUR_GOOGLE_SEARCH_CONSOLE_VERIFICATION_CODE" /> -->
   </head>
   <body>
     <div id="root"></div>
     <script>
+      const host = window.location.hostname;
+      const protocol = window.location.protocol;
+      const isProduction = host.includes("cally.rupeshhh.in") || (!host.includes("localhost") && !host.includes("127.0.0.1"));
+      
       window.process = {
         env: {
           VITE_CLERK_PUBLISHABLE_KEY: "pk_test_d29ydGh5LWRhc3NpZS01Ny5jbGVyay5hY2NvdW50cy5kZXYk",
-          VITE_API_URL: "http://localhost:5001/api"
+          VITE_API_URL: isProduction 
+            ? `${protocol}//api.${host.replace(/^cally\./, "")}/api`
+            : "http://localhost:5001/api"
         }
       };
     </script>
