@@ -6,7 +6,8 @@ export default function LoginPage() {
       routing="path"
       path="/login"
       signUpUrl="/register"
-      afterSignInUrl="/onboard"
+      fallbackRedirectUrl="/onboard"
+      forceRedirectUrl="/onboard"
     />
   );
 }
