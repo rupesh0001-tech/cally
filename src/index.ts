@@ -2,6 +2,8 @@ import { serve } from "bun";
 import index from "./index.html";
 
 const server = serve({
+  port: Number(process.env.PORT || 3000),
+  hostname: "0.0.0.0",
   routes: {
     "/robots.txt": async () => {
       const file = Bun.file("./src/public/robots.txt");
