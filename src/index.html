@@ -30,7 +30,9 @@
       
       window.process = {
         env: {
-          VITE_CLERK_PUBLISHABLE_KEY: "pk_test_d29ydGh5LWRhc3NpZS01Ny5jbGVyay5hY2NvdW50cy5kZXYk",
+          VITE_CLERK_PUBLISHABLE_KEY: isProduction
+            ? "pk_live_Y2xlcmsucnVwZXNoaGguaW4k"
+            : "pk_test_d29ydGh5LWRhc3NpZS01Ny5jbGVyay5hY2NvdW50cy5kZXYk",
           VITE_API_URL: isProduction 
             ? "https://api.cally.rupeshhh.in/api"
             : "http://localhost:5001/api"
