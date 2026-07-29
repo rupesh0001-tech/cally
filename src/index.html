@@ -26,14 +26,13 @@
     <div id="root"></div>
     <script>
       const host = window.location.hostname;
-      const protocol = window.location.protocol;
       const isProduction = host.includes("cally.rupeshhh.in") || (!host.includes("localhost") && !host.includes("127.0.0.1"));
       
       window.process = {
         env: {
           VITE_CLERK_PUBLISHABLE_KEY: "pk_test_d29ydGh5LWRhc3NpZS01Ny5jbGVyay5hY2NvdW50cy5kZXYk",
           VITE_API_URL: isProduction 
-            ? `${protocol}//api.${host.replace(/^cally\./, "")}/api`
+            ? "https://api.cally.rupeshhh.in/api"
             : "http://localhost:5001/api"
         }
       };
