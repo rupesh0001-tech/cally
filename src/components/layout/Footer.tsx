@@ -35,16 +35,16 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h4 className="text-[13px] uppercase tracking-wider opacity-55 mb-4 font-bold text-white/70">Company</h4>
+            <h4 className="text-[13px] uppercase tracking-wider opacity-55 mb-4 font-bold text-white/70">Legal & Policy</h4>
             <ul className="list-none p-0 m-0">
               <li className="mb-2.5 text-sm opacity-85">
-                <a href="#" className="hover:opacity-65 transition-all text-[#FDFBF2] no-underline">About</a>
+                <Link to="/privacy" className="hover:opacity-65 transition-all text-[#FDFBF2] no-underline font-medium">Privacy Policy</Link>
+              </li>
+              <li className="mb-2.5 text-sm opacity-85">
+                <Link to="/terms" className="hover:opacity-65 transition-all text-[#FDFBF2] no-underline font-medium">Terms of Service</Link>
               </li>
               <li className="mb-2.5 text-sm opacity-85">
                 <Link to="/blogs" className="hover:opacity-65 transition-all text-[#FDFBF2] no-underline">Blog</Link>
-              </li>
-              <li className="mb-2.5 text-sm opacity-85">
-                <a href="#" className="hover:opacity-65 transition-all text-[#FDFBF2] no-underline">Careers</a>
               </li>
             </ul>
           </div>
@@ -63,8 +63,12 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        <div className="mt-14 pt-6 border-t border-white/12 text-center text-[12.5px] opacity-50">
-          &copy; {new Date().getFullYear()} Cally. Open scheduling for everyone.
+        <div className="mt-14 pt-6 border-t border-white/12 flex flex-col sm:flex-row items-center justify-between text-[12.5px] opacity-60 gap-4">
+          <div>&copy; {new Date().getFullYear()} Cally. Open scheduling infrastructure.</div>
+          <div className="flex items-center gap-6">
+            <Link to="/privacy" className="hover:underline text-[#FDFBF2]">Privacy Policy</Link>
+            <Link to="/terms" className="hover:underline text-[#FDFBF2]">Terms of Service</Link>
+          </div>
         </div>
       </div>
     </footer>
