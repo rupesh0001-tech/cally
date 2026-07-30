@@ -21,9 +21,10 @@ export function Navbar() {
         </Link>
         
         <nav className="flex items-center gap-7 font-semibold text-[15px] text-[#171614]">
+          <a href="/#app-purpose" className="opacity-85 hover:opacity-100 transition-opacity font-bold text-[#171614]">Purpose & Google Sync</a>
+          <Link to="/privacy" className="opacity-85 hover:opacity-100 transition-opacity text-[#171614]">Privacy Policy</Link>
+          <Link to="/terms" className="opacity-85 hover:opacity-100 transition-opacity text-[#171614]">Terms</Link>
           <Link to="/blogs" className="opacity-85 hover:opacity-100 transition-opacity">Blog</Link>
-          <a href="/#features" className="opacity-85 hover:opacity-100 transition-opacity">Features</a>
-          <a href="/#how" className="opacity-85 hover:opacity-100 transition-opacity">How It Works</a>
           
           {!isLoaded ? (
             <div className="w-20 h-8 opacity-0"></div>
