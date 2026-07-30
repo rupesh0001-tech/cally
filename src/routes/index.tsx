@@ -35,10 +35,12 @@ export function AppRoutes() {
         <Route path="/integrations" element={<div className="py-20 text-center text-ink font-bold">Integrations (Coming Soon)</div>} />
       </Route>
 
-      {/* Auth Pages (Clerk redirects will handle these paths) */}
+      {/* Auth Pages */}
       <Route element={<AuthLayout />}>
         <Route path="/login/*" element={<LoginPage />} />
         <Route path="/register/*" element={<RegisterPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
       </Route>
 
       {/* Protected Dashboard Pages */}

@@ -19,6 +19,20 @@ const server = serve({
       if (await file.exists()) {
         return new Response(file);
       }
+
+      // Handle nested route asset requests (e.g. /book/user/slug/chunk-xxx.js -> ./dist/chunk-xxx.js)
+      const filename = pathname.split("/").pop() || "";
+      if (filename.includes(".")) {
+        const distFile = Bun.file(`./dist/${filename}`);
+        if (await distFile.exists()) {
+          return new Response(distFile);
+        }
+        const publicFile = Bun.file(`./src/public/${filename}`);
+        if (await publicFile.exists()) {
+          return new Response(publicFile);
+        }
+      }
+
       file = Bun.file(`./src/public${pathname}`);
       if (await file.exists()) {
         return new Response(file);
