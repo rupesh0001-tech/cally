@@ -765,7 +765,8 @@ export default function BookingPage({ action }: { action?: "cancel" | "reschedul
     const mo = String(selectedDate.getMonth() + 1).padStart(2, "0");
     const d = String(selectedDate.getDate()).padStart(2, "0");
     const dateStr = `${y}-${mo}-${d}`;
-    const ISOstartTime = new Date(`${dateStr}T${selectedTime}:00Z`).toISOString();
+    const startTimeUtcMs = slotToUTC(dateStr, selectedTime, attendeeTimezone);
+    const ISOstartTime = new Date(startTimeUtcMs).toISOString();
 
     try {
       if (action === "reschedule") {
