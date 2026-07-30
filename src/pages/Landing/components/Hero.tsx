@@ -22,18 +22,13 @@ export function Hero() {
     <section className="bg-[#F3E75B] relative pt-[70px] pb-0">
       <div className={clsx('max-w-[820px]', 'mx-auto', 'px-8', 'text-center', 'relative', 'z-10')}>
         <span className={clsx('inline-flex', 'items-center', 'gap-1.5', 'text-[13px]', 'font-bold', 'tracking-wider', 'bg-[#171614]', 'text-[#F3E75B]', 'px-[18px]', 'py-2', 'rounded-full', 'mb-[26px]')}>
-          ✦ Scheduling Infrastructure for Everyone
+          ✦ Cally — Open Calendar & Scheduling Application
         </span>
         <h1 className={clsx('text-[34px]', 'md:text-[58px]', 'font-bold', 'leading-[1.08]', 'tracking-[-0.01em]', 'uppercase', 'text-[#171614]')}>
-          Booking meetings with a{" "}
-          <span className={clsx('inline-block', 'bg-[#7CEFC0]', 'text-[#171614]', 'px-[18px]', 'py-1', 'pb-2', 'rounded-xl', 'border-3', 'border-[#171614]', '-rotate-3', 'shadow-[6px_6px_0_#171614]', 'ml-1.5')}>
-            WILD SIDE
-          </span>
+          Cally: Open Calendar & Meeting Scheduling Infrastructure
         </h1>
-        <p className={clsx('mt-[26px]', 'text-[17px]', 'leading-1.6', 'text-[#2B2A27]', 'max-w-[640px]', 'mx-auto')}>
-          Meet Cally — the open scheduling tool that ends back-and-forth emails.
-          Share one link, let people book time that works, and get your calendar
-          back.
+        <p className={clsx('mt-[26px]', 'text-[17px]', 'leading-1.6', 'text-[#2B2A27]', 'max-w-[680px]', 'mx-auto', 'font-medium')}>
+          <strong>Cally</strong> is an automated scheduling application that syncs with your Google Calendar to manage availability, eliminate double-bookings, and instantly schedule meetings onto your Google Calendar.
         </p>
 
         <div className={clsx('mt-[34px]', 'flex', 'justify-center')}>
