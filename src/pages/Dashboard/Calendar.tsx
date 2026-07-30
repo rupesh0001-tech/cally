@@ -69,9 +69,10 @@ export default function CalendarPage() {
       } else {
         setMessage({ type: "error", text: "Could not generate authorization redirect link." });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to connect Google Calendar:", err);
-      setMessage({ type: "error", text: "Failed to initiate Google Calendar connection." });
+      const serverMsg = err?.response?.data?.error || err?.message || "Failed to initiate Google Calendar connection.";
+      setMessage({ type: "error", text: serverMsg });
     } finally {
       setIsConnectingCalendar(false);
     }
