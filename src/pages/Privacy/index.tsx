@@ -59,8 +59,8 @@ export default function PrivacyPage() {
               When you connect your Google Account to Cally, you grant us permission to access Google Calendar APIs under the following scopes:
             </p>
             <div className="bg-[#FDFBF2] border border-[#171614]/20 rounded-xl p-4 space-y-3 text-xs sm:text-sm font-mono">
-              <p><strong>`https://www.googleapis.com/auth/calendar.events`</strong> — Read and write access to calendar events.</p>
-              <p><strong>`https://www.googleapis.com/auth/calendar.readonly`</strong> — Read access to view busy/free time slots.</p>
+              <p><strong>`https://www.googleapis.com/auth/calendar`</strong> — See, edit, share, and permanently delete calendars and events accessed using Google Calendar.</p>
+              <p><strong>`https://www.googleapis.com/auth/calendar.readonly`</strong> — See and download any calendar accessed using your Google Calendar to read free/busy availability.</p>
             </div>
             <p className="text-sm leading-relaxed text-[#2B2A27]/90">
               Specifically, we use this access to:
