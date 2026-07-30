@@ -4,9 +4,12 @@ import { env } from "../config/env";
 import { redisConnection } from "../config/redis";
 import { prisma } from "../config/database";
 
+const RESEND_KEY = env.RESEND_API_KEY || process.env.RESEND_API_KEY || "";
+const SENDER_EMAIL = env.EMAIL_FROM || process.env.EMAIL_FROM || "otp@rupeshhh.in";
+
 let resend: Resend | null = null;
-if (env.RESEND_API_KEY && env.RESEND_API_KEY !== "re_123456789") {
-  resend = new Resend(env.RESEND_API_KEY);
+if (RESEND_KEY && RESEND_KEY !== "re_123456789") {
+  resend = new Resend(RESEND_KEY);
 }
 
 export const emailWorker = new Worker(
@@ -68,7 +71,7 @@ export const emailWorker = new Worker(
     if (resend) {
       try {
         const response = await resend.emails.send({
-          from: `Cally <${env.EMAIL_FROM}>`,
+          from: `Cally <${SENDER_EMAIL}>`,
           to: [attendeeEmail],
           subject,
           html,
