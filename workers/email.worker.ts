@@ -67,13 +67,13 @@ export const emailWorker = new Worker(
 
     if (resend) {
       try {
-        await resend.emails.send({
-          from: `Calendly Clone <${env.EMAIL_FROM}>`,
+        const response = await resend.emails.send({
+          from: `Cally <${env.EMAIL_FROM}>`,
           to: [attendeeEmail],
           subject,
           html,
         });
-        console.log(`[Email Worker] Email sent successfully via Resend to ${attendeeEmail}`);
+        console.log(`[Email Worker] Email sent successfully via Resend to ${attendeeEmail}, Resend ID: ${response.data?.id}`);
       } catch (err) {
         console.error("[Email Worker] Resend API error:", err);
         throw err;
