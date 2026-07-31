@@ -1,0 +1,23 @@
+how did you handled 
+
+ in buffer    Limit booking frequency
+Limit how many times this event can be booked.
+
+Max bookings
+3
+per
+
+Day
+
+and in payments 
+Offer seats
+Allow multiple guests to book the same slot.
+
+Number of Seats
+-
+1
++
+seats max
+
+if both implemented at the same time 
+

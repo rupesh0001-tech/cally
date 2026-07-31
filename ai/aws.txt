@@ -1,0 +1,8 @@
+cd /root/projects/frontend && git pull
+cd /root/projects/backend && git pull
+cd /root/projects/worker && git pull
+
+
+cd /root/projects/frontend && git pull
+# 2. Rebuild and restart all Docker containers in background (~25 seconds)
+cd /root/projects && docker compose up -d --build

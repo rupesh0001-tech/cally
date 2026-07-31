@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# build outputs
+dist/
+out/
+*.tgz
+
+# logs
+logs
+*.log
+
+# environment variables
+.env
+.env.*
+!.env.example
+
+# caches
+.cache/
+.eslintcache
+*.tsbuildinfo
+
+# OS & IDE
+.DS_Store
+.idea/
+.vscode/

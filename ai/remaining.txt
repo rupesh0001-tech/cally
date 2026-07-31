@@ -1,0 +1,13 @@
+1.  blogs and SEO 
+
+2. make privacy policy pages , terms and codition pages 
+
+
+
+1. deployment
+    - how to deploy redis 
+    - how to deploy workers 
+    - deployemnt for FE and BE 
+
+2. verify google console
+
