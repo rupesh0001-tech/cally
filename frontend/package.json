@@ -1,0 +1,29 @@
+{
+  "name": "cally",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --env-file=.env --hot src/index.ts",
+    "start": "NODE_ENV=production bun --env-file=.env src/index.ts",
+    "build": "bun run build.ts"
+  },
+  "dependencies": {
+    "@clerk/react": "^6.12.3",
+    "axios": "^1.18.1",
+    "bun-plugin-tailwind": "^0.1.2",
+    "clsx": "^2.1.1",
+    "dayjs": "^1.11.21",
+    "framer-motion": "^12.42.2",
+    "lucide-react": "^0.475.0",
+    "react": "^19",
+    "react-dom": "^19",
+    "react-router-dom": "^6.22.3",
+    "tailwindcss": "^4.1.11"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/bun": "latest"
+  }
+}

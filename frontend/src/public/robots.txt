@@ -1,0 +1,21 @@
+# Cally - Robots.txt
+# Optimized for Google Search Console & Major Search Engine Crawlers
+
+User-agent: *
+Allow: /
+Allow: /blogs
+Allow: /blogs/*
+Allow: /features
+Allow: /pricing
+Allow: /integrations
+Allow: /preview
+
+# Disallow private user workspace & onboarding paths
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /onboard
+Disallow: /onboarding
+Disallow: /api/
+
+# Specify Sitemap location for Googlebot & Search Console
+Sitemap: https://cally.com/sitemap.xml
