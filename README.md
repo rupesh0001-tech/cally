@@ -99,7 +99,6 @@ graph TD
 
 ```
 calenderly-clone/
-├── ai/                # AI system prompts, architecture notes & context
 ├── backend/           # Express API server & Prisma schema
 ├── frontend/          # React 19 frontend application
 ├── worker/            # BullMQ background worker service
@@ -162,10 +161,3 @@ cd worker && bun run dev
 # 4. Start Frontend App (Port 3000)
 cd frontend && bun run dev
 ```
-
----
-
-## 📖 Documentation & References
-
-- 📄 [Detailed Tech Stack & Architecture Notes](file:///Users/rupeshjagtap/projects/calenderly-clone/ai/tech-stack.md)
-- 📄 [System Context & Engineering Guidelines](file:///Users/rupeshjagtap/projects/calenderly-clone/ai/context.md)
