@@ -1,0 +1,142 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String         @id // Clerk User ID
+  email         String         @unique
+  username      String?        @unique
+  firstName     String?
+  lastName      String?
+  imageUrl      String?
+  timezone      String         @default("UTC")
+  locale        String         @default("en")
+  availability  Json?          // General working hours/availability schedule
+  overrides     Json?          // Date-specific availability overrides/exceptions
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  eventTypes    EventType[]
+  hostAnalytics HostAnalytics?
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model EventType {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String
+  slug            String
+  duration        Int
+  price           Float    @default(0)
+  isActive        Boolean  @default(true)
+  locationType    String   @default("Video")
+  locationDetails String   @default("Google Meet")
+  availability    Json?    // Week days & time slots configuration
+  overrides       Json?    // Date-specific availability overrides/exceptions
+  bookingFields   Json?    // Custom booking form fields toggle & config
+  appearance      String   @default("classic") // Appearance layout selection
+  bookings        Booking[]
+  
+  // Payments & Seats configuration
+  paymentEnabled  Boolean  @default(false)
+  currency        String   @default("INR")
+  seatsEnabled    Boolean  @default(false)
+  seatsMax        Int      @default(1)
+  seatsShareInfo  Boolean  @default(false)
+  seatsShowCount  Boolean  @default(false)
+
+  // Reschedule & Cancel configuration
+  rescheduleEnabled  Boolean @default(true)
+  cancelEnabled      Boolean @default(true)
+  rescheduleNotice   Int     @default(60) // notice period in minutes
+  cancelNotice       Int     @default(60) // notice period in minutes
+  cancellationPolicy String  @default("")
+
+  // Advanced Availability Rules
+  beforeBuffer    Int      @default(0) // in minutes
+  afterBuffer     Int      @default(0) // in minutes
+  minimumNotice   Int      @default(120) // in minutes
+  slotInterval    Int?     // custom slot intervals in minutes, null means use duration
+  limitBookingFrequency    Json? // limit count per time period (day/week/month)
+  limitTotalBookingDuration Json? // limit minutes per time period (day/week/month)
+  limitFutureBookings      Json? // limit days ahead
+  limitUpcomingBookings    Json? // limit active upcoming bookings per booker
+  showOnlyFirstAvailableSlot Boolean @default(false)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, slug])
+  @@map("event_types")
+}
+
+model Booking {
+  id                String    @id @default(cuid())
+  eventTypeId       String
+  eventType         EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  startTime         DateTime
+  endTime           DateTime
+  status            String    @default("confirmed") // e.g. confirmed, cancelled, pending_payment
+  attendeeName      String
+  attendeeEmail     String
+  attendeePhone     String?
+  bookingFieldsData Json?     // JSON mapping custom answers { "notes": "...", "guests": [...] }
+  cancellationToken String?   @default(uuid())
+  rescheduleToken   String?   @default(uuid())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  auditLogs         AuditLog[]
+
+  @@map("bookings")
+}
+
+model HostAnalytics {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalBookings Int      @default(0)
+  totalRevenue  Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("host_analytics")
+}
+
+model GoogleAccount {
+  id           String   @id @default(cuid())
+  clerkUserId  String   @unique
+  accessToken  String
+  refreshToken String
+  expiryDate   BigInt
+  settings     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("google_accounts")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  bookingId String?
+  booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
