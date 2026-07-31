@@ -17,6 +17,7 @@ export const env = {
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || "",
   GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI || "",
   CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || "",
+  FRONTEND_URL: process.env.FRONTEND_URL || "https://cally.rupeshhh.in",
 };
 
 if (!env.DATABASE_URL) {

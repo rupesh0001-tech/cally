@@ -176,13 +176,14 @@ export const calendarWorker = new Worker(
         });
 
         const createdEventId = response.data.id;
-        console.log(`[Calendar Worker] ✅ Event created in Google Calendar: ${createdEventId}`);
+        const meetLink = response.data.hangoutLink || response.data.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri;
+        console.log(`[Calendar Worker] ✅ Event created in Google Calendar: ${createdEventId}${meetLink ? `, Meet: ${meetLink}` : ""}`);
 
         const existingFields = (booking.bookingFieldsData as Record<string, any>) ?? {};
         await prisma.booking.update({
           where: { id: bookingId },
           data: {
-            bookingFieldsData: { ...existingFields, googleEventId: createdEventId },
+            bookingFieldsData: { ...existingFields, googleEventId: createdEventId, hangoutLink: meetLink },
           },
         });
       } catch (err: any) {
