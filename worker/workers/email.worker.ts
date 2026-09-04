@@ -354,7 +354,8 @@ export const emailWorker = new Worker(
           throw new Error(`Resend API Error: ${response.error.message}`);
         }
 
-        console.log(`[Email Worker] ✅ Email sent via Resend to ${recipients.join(", ")}, Resend ID: ${response.data?.id}`);
+        const emailId = response.data?.id || (response as any).id || "Sent";
+        console.log(`[Email Worker] ✅ Email sent via Resend to ${recipients.join(", ")}, Resend ID: ${emailId}`);
       } catch (err) {
         console.error("[Email Worker] ❌ Resend API error:", err);
         throw err;
