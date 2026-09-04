@@ -215,9 +215,17 @@ export const emailWorker = new Worker(
 
     if (resend) {
       try {
-        const recipients = [attendeeEmail];
-        if (hostEmail && hostEmail !== attendeeEmail) {
-          recipients.push(hostEmail);
+        const recipients: string[] = [];
+        if (attendeeEmail && attendeeEmail.includes("@")) {
+          recipients.push(attendeeEmail.trim());
+        }
+        if (hostEmail && hostEmail.includes("@") && !recipients.includes(hostEmail.trim())) {
+          recipients.push(hostEmail.trim());
+        }
+
+        if (recipients.length === 0) {
+          console.warn("[Email Worker] ⚠️ No valid recipients found, skipping email.");
+          return;
         }
 
         const response = await resend.emails.send({
@@ -226,6 +234,12 @@ export const emailWorker = new Worker(
           subject,
           html,
         });
+
+        if (response.error) {
+          console.error("[Email Worker] ❌ Resend returned error:", JSON.stringify(response.error, null, 2));
+          throw new Error(`Resend API Error: ${response.error.message}`);
+        }
+
         console.log(`[Email Worker] ✅ Email sent via Resend to ${recipients.join(", ")}, Resend ID: ${response.data?.id}`);
       } catch (err) {
         console.error("[Email Worker] ❌ Resend API error:", err);
