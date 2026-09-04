@@ -18,6 +18,54 @@ function generateBookingToken(bookingId: string): string {
   return crypto.createHmac("sha256", secret).update(bookingId).digest("hex");
 }
 
+function formatDateTimeRange(start: Date, end: Date, timezone?: string) {
+  const timeZone = timezone || "Asia/Kolkata";
+  
+  const dateFormatter = new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone,
+  });
+
+  const timeFormatter = new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone,
+  });
+
+  const dateStr = dateFormatter.format(start);
+  const startTimeStr = timeFormatter.format(start);
+  const endTimeStr = timeFormatter.format(end);
+
+  return {
+    dateStr,
+    timeRangeStr: `${startTimeStr} – ${endTimeStr}`,
+    timeZoneStr: timeZone,
+  };
+}
+
+function generateGoogleCalendarUrl(
+  title: string,
+  start: Date,
+  end: Date,
+  details: string,
+  location: string
+): string {
+  const toUtcIso = (d: Date) => d.toISOString().replace(/-|:|\.\d+/g, "");
+  const dates = `${toUtcIso(start)}/${toUtcIso(end)}`;
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: title,
+    dates,
+    details,
+    location,
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 export const emailWorker = new Worker(
   "email",
   async (job: Job) => {
@@ -34,30 +82,24 @@ export const emailWorker = new Worker(
       return;
     }
 
-    const { attendeeEmail, attendeeName, startTime, eventType } = booking;
+    const { attendeeEmail, attendeeName, attendeePhone, startTime, endTime: rawEndTime, eventType } = booking;
     const hostUser = eventType.user;
     const hostName = `${hostUser.firstName || ""} ${hostUser.lastName || ""}`.trim() || hostUser.username || hostUser.email;
     const hostEmail = hostUser.email;
+    const hostTimezone = hostUser.timezone || "Asia/Kolkata";
 
-    // Secure tokens & links
+    const startDate = new Date(startTime);
+    const endDate = rawEndTime ? new Date(rawEndTime) : new Date(startDate.getTime() + eventType.duration * 60000);
+
+    const { dateStr, timeRangeStr, timeZoneStr } = formatDateTimeRange(startDate, endDate, hostTimezone);
+
+    // Secure tokens & management links
     const token = generateBookingToken(bookingId);
     const frontendUrl = env.FRONTEND_URL || process.env.FRONTEND_URL || "https://cally.rupeshhh.in";
     const cancelUrl = `${frontendUrl}/booking/${bookingId}/cancel?token=${token}`;
     const rescheduleUrl = `${frontendUrl}/booking/${bookingId}?reschedule=true&token=${token}`;
 
-    // Date & Time formatting
-    const eventDate = new Date(startTime);
-    const formattedDate = eventDate.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZoneName: "short",
-    });
-
-    // Location & Google Meet link resolution
+    // Resolve Google Meet / video call links
     const fieldsData = (booking.bookingFieldsData as Record<string, any>) || {};
     const hangoutLink = fieldsData.hangoutLink || fieldsData.meetLink;
     const locationDetails = eventType.locationDetails;
@@ -69,149 +111,221 @@ export const emailWorker = new Worker(
       googleMeetUrl = locationDetails;
     }
 
-    let locationLabel = "Google Meet";
+    let locationDisplay = "Google Meet";
     if (googleMeetUrl) {
-      locationLabel = `<a href="${googleMeetUrl}" style="color: #1a73e8; font-weight: 600; text-decoration: underline;">Join Google Meet</a>`;
+      locationDisplay = "Google Meet Video Call";
     } else if (locationDetails) {
-      locationLabel = locationDetails;
+      locationDisplay = locationDetails;
     } else if (eventType.locationType) {
-      locationLabel = eventType.locationType === "google_meet" ? "Google Meet" : eventType.locationType;
+      locationDisplay = eventType.locationType === "google_meet" ? "Google Meet" : eventType.locationType;
     }
 
-    const meetButtonHtml = googleMeetUrl
-      ? `
-        <div style="text-align: center; margin: 24px 0;">
-          <a href="${googleMeetUrl}" style="display: inline-block; background-color: #1a73e8; color: #ffffff; font-weight: 600; font-size: 15px; padding: 12px 28px; border-radius: 8px; text-decoration: none; box-shadow: 0 2px 4px rgba(26,115,232,0.3);">
-            📹 Join Google Meet
-          </a>
-          <p style="font-size: 12px; color: #64748b; margin-top: 8px;">Direct Link: <a href="${googleMeetUrl}" style="color: #1a73e8;">${googleMeetUrl}</a></p>
-        </div>
-      `
-      : "";
+    const gCalUrl = generateGoogleCalendarUrl(
+      `${eventType.title}: ${attendeeName} and ${hostName}`,
+      startDate,
+      endDate,
+      `Meeting scheduled via Cally.\nHost: ${hostName} (${hostEmail})\nGuest: ${attendeeName} (${attendeeEmail})\nMeeting Link: ${googleMeetUrl || locationDisplay}\nReschedule: ${rescheduleUrl}\nCancel: ${cancelUrl}`,
+      googleMeetUrl || locationDisplay
+    );
 
     let subject = "";
-    let html = "";
+    let badgeText = "";
+    let badgeBg = "#f0fdf4";
+    let badgeColor = "#166534";
+    let badgeBorder = "#bbf7d0";
+    let headline = "";
+    let subheadline = "";
 
     if (type === "booking-confirmation") {
-      subject = `Confirmed: ${eventType.title} with ${hostName}`;
-      html = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; color: #0f172a;">
-          <div style="background-color: #0f172a; padding: 24px 32px; text-align: center;">
-            <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0; letter-spacing: 0.5px;">Cally</h1>
-          </div>
-          <div style="padding: 32px;">
-            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; color: #166534; font-weight: 600; font-size: 14px;">
-              ✓ Meeting Confirmed
-            </div>
-            <h2 style="font-size: 20px; font-weight: 700; margin: 0 0 16px 0; color: #0f172a;">${eventType.title}</h2>
-            <p style="font-size: 14px; color: #475569; margin: 0 0 24px 0; line-height: 1.6;">
-              Hi <strong>${attendeeName}</strong>, your appointment with <strong>${hostName}</strong> has been successfully scheduled.
-            </p>
-            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b; width: 120px;"><strong>Host:</strong></td>
-                  <td style="padding: 8px 0; color: #0f172a; font-weight: 500;">${hostName} (${hostEmail})</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b;"><strong>Guest:</strong></td>
-                  <td style="padding: 8px 0; color: #0f172a; font-weight: 500;">${attendeeName} (${attendeeEmail})</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b;"><strong>When:</strong></td>
-                  <td style="padding: 8px 0; color: #0f172a; font-weight: 500;">${formattedDate}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b;"><strong>Duration:</strong></td>
-                  <td style="padding: 8px 0; color: #0f172a; font-weight: 500;">${eventType.duration} minutes</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b;"><strong>Location:</strong></td>
-                  <td style="padding: 8px 0; color: #0f172a; font-weight: 500;">${locationLabel}</td>
-                </tr>
-              </table>
-            </div>
-
-            ${meetButtonHtml}
-
-            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0; text-align: center;">
-              <p style="font-size: 13px; color: #64748b; margin-bottom: 12px;">Need to make changes or cancel?</p>
-              <div>
-                <a href="${rescheduleUrl}" style="display: inline-block; padding: 10px 20px; font-size: 13px; font-weight: 600; color: #2563eb; background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; text-decoration: none; margin-right: 8px;">Reschedule Meeting</a>
-                <a href="${cancelUrl}" style="display: inline-block; padding: 10px 20px; font-size: 13px; font-weight: 600; color: #dc2626; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; text-decoration: none;">Cancel Meeting</a>
-              </div>
-            </div>
-          </div>
-          <div style="background-color: #f8fafc; padding: 16px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
-            <p style="font-size: 12px; color: #94a3b8; margin: 0;">Automated email sent by <strong>Cally</strong> scheduling assistant.</p>
-          </div>
-        </div>
-      `;
+      subject = `Confirmed: ${eventType.title} with ${hostName} on ${dateStr}`;
+      badgeText = "✓ Meeting Confirmed";
+      badgeBg = "#f0fdf4";
+      badgeColor = "#166534";
+      badgeBorder = "#bbf7d0";
+      headline = "You're Scheduled!";
+      subheadline = `A calendar invitation has been sent to <strong>${attendeeEmail}</strong> and <strong>${hostEmail}</strong>.`;
     } else if (type === "booking-reminder") {
-      subject = `Reminder: ${eventType.title} with ${hostName}`;
-      html = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; color: #0f172a;">
-          <div style="background-color: #0f172a; padding: 24px 32px; text-align: center;">
-            <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0; letter-spacing: 0.5px;">Cally</h1>
-          </div>
-          <div style="padding: 32px;">
-            <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; color: #1e40af; font-weight: 600; font-size: 14px;">
-              ⏰ Upcoming Meeting Reminder
-            </div>
-            <h2 style="font-size: 20px; font-weight: 700; margin: 0 0 16px 0; color: #0f172a;">${eventType.title}</h2>
-            <p style="font-size: 14px; color: #475569; margin: 0 0 24px 0; line-height: 1.6;">
-              Hi <strong>${attendeeName}</strong>, this is a reminder that your meeting with <strong>${hostName}</strong> is coming up.
-            </p>
-            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+      subject = `Reminder: ${eventType.title} with ${hostName} (${timeRangeStr})`;
+      badgeText = "⏰ Upcoming Meeting Reminder";
+      badgeBg = "#eff6ff";
+      badgeColor = "#1e40af";
+      badgeBorder = "#bfdbfe";
+      headline = "Upcoming Appointment Reminder";
+      subheadline = `Your scheduled meeting is coming up soon. Here are the details:`;
+    } else if (type === "booking-cancellation") {
+      subject = `Cancelled: ${eventType.title} with ${hostName} on ${dateStr}`;
+      badgeText = "✕ Meeting Cancelled";
+      badgeBg = "#fef2f2";
+      badgeColor = "#991b1b";
+      badgeBorder = "#fecaca";
+      headline = "Meeting Cancelled";
+      subheadline = `The appointment scheduled for <strong>${dateStr}</strong> has been cancelled.`;
+    }
+
+    const isCancelled = type === "booking-cancellation";
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #0f172a;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 40px 15px;">
+    <tr>
+      <td align="center">
+        <!-- Main Card -->
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
+          
+          <!-- Header Bar -->
+          <tr>
+            <td style="background-color: #0f172a; padding: 24px 32px; text-align: left;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td style="padding: 8px 0; color: #64748b; width: 120px;"><strong>Host:</strong></td>
-                  <td style="padding: 8px 0; color: #0f172a; font-weight: 500;">${hostName}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b;"><strong>When:</strong></td>
-                  <td style="padding: 8px 0; color: #0f172a; font-weight: 500;">${formattedDate}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b;"><strong>Location:</strong></td>
-                  <td style="padding: 8px 0; color: #0f172a; font-weight: 500;">${locationLabel}</td>
+                  <td>
+                    <span style="color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; text-decoration: none;">Cally</span>
+                  </td>
+                  <td align="right">
+                    <span style="display: inline-block; background-color: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder}; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">
+                      ${badgeText}
+                    </span>
+                  </td>
                 </tr>
               </table>
-            </div>
+            </td>
+          </tr>
 
-            ${meetButtonHtml}
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 32px;">
+              
+              <!-- Greeting & Headline -->
+              <h1 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 700; color: #0f172a; line-height: 1.3;">${headline}</h1>
+              <p style="margin: 0 0 24px 0; font-size: 15px; color: #475569; line-height: 1.5;">${subheadline}</p>
 
-            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0; text-align: center;">
-              <div>
-                <a href="${rescheduleUrl}" style="display: inline-block; padding: 10px 20px; font-size: 13px; font-weight: 600; color: #2563eb; background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; text-decoration: none; margin-right: 8px;">Reschedule</a>
-                <a href="${cancelUrl}" style="display: inline-block; padding: 10px 20px; font-size: 13px; font-weight: 600; color: #dc2626; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; text-decoration: none;">Cancel Meeting</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    } else if (type === "booking-cancellation") {
-      subject = `Cancelled: ${eventType.title} with ${hostName}`;
-      html = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; color: #0f172a;">
-          <div style="background-color: #0f172a; padding: 24px 32px; text-align: center;">
-            <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0; letter-spacing: 0.5px;">Cally</h1>
-          </div>
-          <div style="padding: 32px;">
-            <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; color: #991b1b; font-weight: 600; font-size: 14px;">
-              ✕ Meeting Cancelled
-            </div>
-            <h2 style="font-size: 20px; font-weight: 700; margin: 0 0 16px 0; color: #0f172a;">${eventType.title}</h2>
-            <p style="font-size: 14px; color: #475569; margin: 0 0 24px 0; line-height: 1.6;">
-              Hi <strong>${attendeeName}</strong>, the meeting <strong>${eventType.title}</strong> scheduled for ${formattedDate} has been cancelled.
-            </p>
-          </div>
-          <div style="background-color: #f8fafc; padding: 16px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
-            <p style="font-size: 12px; color: #94a3b8; margin: 0;">Cally Scheduling Assistant</p>
-          </div>
-        </div>
-      `;
-    }
+              <!-- Event Details Box -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 24px;">
+                    
+                    <!-- Event Title -->
+                    <div style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+                      📌 ${eventType.title}
+                    </div>
+
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <!-- Date -->
+                      <tr>
+                        <td width="30" valign="top" style="padding: 8px 0; font-size: 16px;">📅</td>
+                        <td width="100" valign="top" style="padding: 8px 0; font-size: 14px; font-weight: 600; color: #64748b;">Date</td>
+                        <td valign="top" style="padding: 8px 0; font-size: 14px; font-weight: 600; color: #0f172a;">${dateStr}</td>
+                      </tr>
+                      <!-- Time & Timezone -->
+                      <tr>
+                        <td width="30" valign="top" style="padding: 8px 0; font-size: 16px;">⏰</td>
+                        <td width="100" valign="top" style="padding: 8px 0; font-size: 14px; font-weight: 600; color: #64748b;">Time</td>
+                        <td valign="top" style="padding: 8px 0; font-size: 14px; font-weight: 600; color: #0f172a;">
+                          ${timeRangeStr} <span style="font-size: 13px; font-weight: 500; color: #64748b;">(${eventType.duration} min • ${timeZoneStr})</span>
+                        </td>
+                      </tr>
+                      <!-- Location / Meet -->
+                      <tr>
+                        <td width="30" valign="top" style="padding: 8px 0; font-size: 16px;">📍</td>
+                        <td width="100" valign="top" style="padding: 8px 0; font-size: 14px; font-weight: 600; color: #64748b;">Location</td>
+                        <td valign="top" style="padding: 8px 0; font-size: 14px; color: #0f172a;">
+                          ${googleMeetUrl ? `<a href="${googleMeetUrl}" style="color: #2563eb; font-weight: 600; text-decoration: underline;">${locationDisplay}</a>` : locationDisplay}
+                        </td>
+                      </tr>
+                      <!-- Host Info -->
+                      <tr>
+                        <td width="30" valign="top" style="padding: 8px 0; font-size: 16px;">👤</td>
+                        <td width="100" valign="top" style="padding: 8px 0; font-size: 14px; font-weight: 600; color: #64748b;">Host</td>
+                        <td valign="top" style="padding: 8px 0; font-size: 14px; color: #0f172a;">
+                          <strong>${hostName}</strong> <span style="color: #64748b; font-size: 13px;">(${hostEmail})</span>
+                        </td>
+                      </tr>
+                      <!-- Attendee Info -->
+                      <tr>
+                        <td width="30" valign="top" style="padding: 8px 0; font-size: 16px;">✉️</td>
+                        <td width="100" valign="top" style="padding: 8px 0; font-size: 14px; font-weight: 600; color: #64748b;">Attendee</td>
+                        <td valign="top" style="padding: 8px 0; font-size: 14px; color: #0f172a;">
+                          <strong>${attendeeName}</strong> <span style="color: #64748b; font-size: 13px;">(${attendeeEmail}${attendeePhone ? ` • ${attendeePhone}` : ""})</span>
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+
+              ${!isCancelled && googleMeetUrl ? `
+              <!-- Google Meet Primary CTA -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; text-align: center;">
+                <tr>
+                  <td align="center">
+                    <a href="${googleMeetUrl}" target="_blank" style="display: inline-block; background-color: #1a73e8; color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 36px; border-radius: 8px; box-shadow: 0 4px 12px rgba(26, 115, 232, 0.25);">
+                      📹 Join Google Meet Call
+                    </a>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #64748b;">
+                      Direct Link: <a href="${googleMeetUrl}" style="color: #1a73e8; text-decoration: underline;">${googleMeetUrl}</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              ` : ""}
+
+              ${!isCancelled ? `
+              <!-- Add To Calendar Button -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; text-align: center;">
+                <tr>
+                  <td align="center">
+                    <a href="${gCalUrl}" target="_blank" style="display: inline-block; background-color: #f8fafc; color: #334155; border: 1px solid #cbd5e1; font-size: 13px; font-weight: 600; text-decoration: none; padding: 10px 24px; border-radius: 6px;">
+                      📅 Add to Google Calendar
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              ` : ""}
+
+              ${!isCancelled ? `
+              <!-- Manage Booking Actions -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border-top: 1px solid #e2e8f0; padding-top: 24px; margin-top: 8px; text-align: center;">
+                <tr>
+                  <td>
+                    <p style="margin: 0 0 12px 0; font-size: 13px; color: #64748b;">Need to make adjustments to this booking?</p>
+                    <div>
+                      <a href="${rescheduleUrl}" style="display: inline-block; background-color: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; font-size: 13px; font-weight: 600; text-decoration: none; padding: 10px 20px; border-radius: 6px; margin: 4px;">
+                        🔄 Reschedule Appointment
+                      </a>
+                      <a href="${cancelUrl}" style="display: inline-block; background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: 13px; font-weight: 600; text-decoration: none; padding: 10px 20px; border-radius: 6px; margin: 4px;">
+                        ✕ Cancel Appointment
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              ` : ""}
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8fafc; padding: 20px 32px; border-top: 1px solid #e2e8f0; text-align: center;">
+              <p style="margin: 0 0 4px 0; font-size: 13px; font-weight: 600; color: #475569;">Cally Scheduling Platform</p>
+              <p style="margin: 0; font-size: 12px; color: #94a3b8;">This automated email was sent for booking ID: ${bookingId}</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `;
 
     if (resend) {
       try {
